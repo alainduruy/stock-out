@@ -137,25 +137,14 @@ def get_sheets_service():
                 "GOOGLE_SERVICE_ACCOUNT_JSON environment variable is empty"
             )
         
-        # Debug: log the first 100 characters to help diagnose issues
-        print(f"DEBUG: GOOGLE_SERVICE_ACCOUNT_JSON length: {len(service_json_blob)}")
-        print(f"DEBUG: GOOGLE_SERVICE_ACCOUNT_JSON preview: {service_json_blob[:100]}...")
-        
         try:
             info = json.loads(service_json_blob)
         except json.JSONDecodeError as e:
-            # Check if the content starts with *** which indicates GitHub secret masking
-            if service_json_blob.strip().startswith('***'):
-                raise RuntimeError(
-                    "GOOGLE_SERVICE_ACCOUNT_JSON appears to contain masked content (starts with ***). "
-                    "This suggests the GitHub secret may not be properly configured. "
-                    "Ensure the secret contains valid JSON content from your Google Service Account key file, "
-                    "not a masked or placeholder value."
-                )
-            else:
-                raise RuntimeError(
-                    f"Invalid JSON in GOOGLE_SERVICE_ACCOUNT_JSON: {e}. Content preview: {service_json_blob[:200]}"
-                )
+            raise RuntimeError(
+                f"Invalid JSON in GOOGLE_SERVICE_ACCOUNT_JSON: {e}. "
+                "Please ensure the GitHub secret contains valid JSON content from your Google Service Account key file. "
+                "The JSON should start with '{' and contain fields like 'type', 'project_id', 'private_key', etc."
+            )
         
         creds = service_account.Credentials.from_service_account_info(
             info,
