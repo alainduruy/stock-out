@@ -134,7 +134,8 @@ def get_sheets_service():
         # Validate that the JSON blob is not empty
         if not service_json_blob.strip():
             raise RuntimeError(
-                "GOOGLE_SERVICE_ACCOUNT_JSON environment variable is empty"
+                "GOOGLE_SERVICE_ACCOUNT_JSON environment variable is empty or contains only whitespace. "
+                "Please ensure the GitHub secret is properly configured with valid JSON content."
             )
         
         try:
