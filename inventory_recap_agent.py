@@ -144,9 +144,18 @@ def get_sheets_service():
         try:
             info = json.loads(service_json_blob)
         except json.JSONDecodeError as e:
-            raise RuntimeError(
-                f"Invalid JSON in GOOGLE_SERVICE_ACCOUNT_JSON: {e}. Content preview: {service_json_blob[:200]}"
-            )
+            # Check if the content starts with *** which indicates GitHub secret masking
+            if service_json_blob.strip().startswith('***'):
+                raise RuntimeError(
+                    "GOOGLE_SERVICE_ACCOUNT_JSON appears to contain masked content (starts with ***). "
+                    "This suggests the GitHub secret may not be properly configured. "
+                    "Ensure the secret contains valid JSON content from your Google Service Account key file, "
+                    "not a masked or placeholder value."
+                )
+            else:
+                raise RuntimeError(
+                    f"Invalid JSON in GOOGLE_SERVICE_ACCOUNT_JSON: {e}. Content preview: {service_json_blob[:200]}"
+                )
         
         creds = service_account.Credentials.from_service_account_info(
             info,
