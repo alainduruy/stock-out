@@ -125,9 +125,29 @@ def get_sheets_service():
     # Two ways: path or raw JSON in env var
     service_json_path = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
     service_json_blob = os.getenv("GOOGLE_SERVICE_ACCOUNT_JSON")
+    
+    # Debug: Check what environment variables are available
+    print(f"DEBUG: GOOGLE_APPLICATION_CREDENTIALS is {'set' if service_json_path else 'not set'}")
+    print(f"DEBUG: GOOGLE_SERVICE_ACCOUNT_JSON is {'set' if service_json_blob else 'not set'}")
 
     if service_json_blob:
-        info = json.loads(service_json_blob)
+        # Validate that the JSON blob is not empty
+        if not service_json_blob.strip():
+            raise RuntimeError(
+                "GOOGLE_SERVICE_ACCOUNT_JSON environment variable is empty"
+            )
+        
+        # Debug: log the first 100 characters to help diagnose issues
+        print(f"DEBUG: GOOGLE_SERVICE_ACCOUNT_JSON length: {len(service_json_blob)}")
+        print(f"DEBUG: GOOGLE_SERVICE_ACCOUNT_JSON preview: {service_json_blob[:100]}...")
+        
+        try:
+            info = json.loads(service_json_blob)
+        except json.JSONDecodeError as e:
+            raise RuntimeError(
+                f"Invalid JSON in GOOGLE_SERVICE_ACCOUNT_JSON: {e}. Content preview: {service_json_blob[:200]}"
+            )
+        
         creds = service_account.Credentials.from_service_account_info(
             info,
             scopes=[
@@ -145,7 +165,9 @@ def get_sheets_service():
         )
     else:
         raise RuntimeError(
-            "Missing credentials: set GOOGLE_SERVICE_ACCOUNT_JSON or GOOGLE_APPLICATION_CREDENTIALS"
+            "Missing credentials: set GOOGLE_SERVICE_ACCOUNT_JSON or GOOGLE_APPLICATION_CREDENTIALS. "
+            "For GitHub Actions, ensure the GOOGLE_SERVICE_ACCOUNT_JSON secret is properly configured "
+            "and contains valid JSON content from your Google Service Account key file."
         )
 
     return build("sheets", "v4", credentials=creds, cache_discovery=False)
